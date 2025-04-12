@@ -12,10 +12,64 @@ agent = Agent(window_size)
 data = getStockDataVec(stock_name)
 l = len(data) - 1
 batch_size = 32
+OPPORTUNITY_COST = 2.75/100
+DOUBLE_BET_PENALTY = 1000 
+
+def step(combined_state, action, t):
+	global window_size
+	global l 
+
+	*state, portfolio = combined_state
+	long, short, t_taken_percentage, _, __ = portfolio
+	is_idle = long == 0 and short == 0
+	t_taken = int(t_taken_percentage * window_size + t - window_size)
+	is_in_position_too_long = t_taken_percentage <= 0 
+	next_portfolio = [long, short, t_taken_percentage - 1/window_size if not is_idle else 0, 0, 0]
+	reward = 0
+	info = {}
+
+	if action == 0: #hold
+		if is_idle:
+			reward = -OPPORTUNITY_COST
+		elif is_in_position_too_long: #force sell
+			now = data["Close"][t] 
+			then = data["Close"][t_taken]
+			reward = (now - then) / then 
+			next_portfolio = [0, 0, 0, 0, 0]
+		else:
+			gain = data["Close"][t] - data["Close"][t_taken]
+			gain = gain if long == 1 else -gain
+			ith_taken = t - t_taken
+			reward = gain * (0.5 ** ith_taken)
+			info["profit"] = reward
+			info["start"] = t_taken 
+			info["end"] = t
+	elif action == 1 or action == 2: #long/short 
+		if is_idle:
+			next_portfolio = [1 if action == 1 else 0, 1 if action == 2 else 0, (window_size-1)/window_size, 0, 0]
+		else:
+			reward = -DOUBLE_BET_PENALTY
+	else: #sell 
+		if is_idle:
+			reward = -DOUBLE_BET_PENALTY
+		else:
+			now = data["Close"][t] 
+			then = data["Close"][t_taken]
+			reward = (now - then) * (1 if long == 1 else -1)
+			next_portfolio = [0, 0, 0, 0, 0]
+			info = {
+				"start": then,
+				"end": now,
+				"profit": reward,
+			}
+
+	done = t == l - 1
+
+	return (getState(data, t + 1, window_size, next_portfolio), reward, done, info)
 
 for e in range(episode_count + 1):
 	print("Episode " + str(e) + "/" + str(episode_count))
-	state = getState(data, 0, window_size + 1)
+	state = getState(data, 0, window_size)
 
 	total_profit = 0
 	agent.inventory = []
@@ -23,21 +77,22 @@ for e in range(episode_count + 1):
 	for t in range(l):
 		action = agent.act(state)
 
-		# sit
-		next_state = getState(data, t + 1, window_size + 1)
-		reward = 0
+		next_state, reward, done, info = step(state, action, t)
+		*_, portfolio = next_state
 
-		if action == 1: # buy
-			agent.inventory.append(data[t])
-			print("Buy: " + formatPrice(data[t]))
-
-		elif action == 2 and len(agent.inventory) > 0: # sell
-			bought_price = agent.inventory.pop(0)
-			reward = max(data[t] - bought_price, 0)
-			total_profit += data[t] - bought_price
-			print("Sell: " + formatPrice(data[t]) + " | Profit: " + formatPrice(data[t] - bought_price))
-
-		done = True if t == l - 1 else False
+		if action == 0: 
+			print(f"Hold at t{t}| {formatPrice(data['Close'][t])}")
+		elif action == 1:
+			print(f"Long at t{t} | {formatPrice(data['Close'][t])}")
+		elif action == 2:
+			print(f"Short at t{t} | {formatPrice(data['Close'][t])}")
+		elif action == 3:
+			print(f"Sell at t{t} | {formatPrice(data['Close'][t])}")
+			if "profit" in info:
+				print(f"Profit: {formatPrice(info['profit'])} | Start: {info['start']} | End: {info['end']}")
+				total_profit += info["profit"]
+		print(f"Reward: {reward}")
+		print(f"Portfolio: {portfolio[:3]}")
 		agent.memory.append((state, action, reward, next_state, done))
 		state = next_state
 

@@ -11,7 +11,7 @@ from collections import deque
 class Agent:
 	def __init__(self, state_size, is_eval=False, model_name=""):
 		self.state_size = state_size # normalized previous days
-		self.action_size = 3 # sit, buy, sell
+		self.action_size = 4 # hold, long, short, sell
 		self.memory = deque(maxlen=1000)
 		self.inventory = []
 		self.model_name = model_name
@@ -26,7 +26,7 @@ class Agent:
 
 	def _model(self):
 		model = Sequential()
-		model.add(Dense(units=64, input_dim=self.state_size, activation="relu"))
+		model.add(Dense(units=64, input_shape=(self.state_size+1, 5), activation="relu"))
 		model.add(Dense(units=32, activation="relu"))
 		model.add(Dense(units=8, activation="relu"))
 		model.add(Dense(self.action_size, activation="linear"))
@@ -50,11 +50,11 @@ class Agent:
 		for state, action, reward, next_state, done in mini_batch:
 			target = reward
 			if not done:
-				target = reward + self.gamma * np.amax(self.model.predict(next_state)[0])
+				target = reward + self.gamma * np.amax(self.model.predict(np.array([next_state]))[0])
 
-			target_f = self.model.predict(state)
+			target_f = self.model.predict(np.array([state]))
 			target_f[0][action] = target
-			self.model.fit(state, target_f, epochs=1, verbose=0)
+			self.model.fit(np.array([state]), target_f, epochs=1, verbose=0)
 
 		if self.epsilon > self.epsilon_min:
 			self.epsilon *= self.epsilon_decay 
