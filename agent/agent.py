@@ -38,7 +38,7 @@ class Agent:
 		if not self.is_eval and np.random.rand() <= self.epsilon:
 			return random.randrange(self.action_size)
 
-		options = self.model.predict(state)
+		options = self.model.predict(np.array([state]))
 		return np.argmax(options[0])
 
 	def expReplay(self, batch_size):
