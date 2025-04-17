@@ -29,7 +29,7 @@ class Agent:
 		model.add(Dense(units=32, activation="gelu"))
 		model.add(Dense(units=8, activation="gelu"))
 		model.add(Dense(self.action_size, activation="linear"))
-		model.compile(loss="mse", optimizer=Adam(learning_rate=0.002))
+		model.compile(loss="mse", optimizer=Adam(learning_rate=0.001))
 		model.summary()
 		return model
 
@@ -38,7 +38,6 @@ class Agent:
 			return random.randrange(self.action_size)
 
 		options = self.model.predict(np.array([state]), verbose=0)
-		print(options)
 		return np.argmax(options[0])
 
 	def expReplay(self, batch_size):
@@ -53,9 +52,6 @@ class Agent:
 				target = reward + self.gamma * np.amax(self.model.predict(np.array([next_state]), verbose=0)[0])
 
 			target_f = self.model.predict(np.array([state]), verbose=0)
-			#print(target_f)
-			#print(f"action: {action}")
-			#exit()
 			target_f[0][action] = target
 			history = self.model.fit(np.array([state]), target_f, epochs=1, verbose=0)
 			return history.history["loss"][0]

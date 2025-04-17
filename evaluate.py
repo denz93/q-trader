@@ -48,7 +48,6 @@ def evaluate(model_name):
 	total_profit = 0
 	for t in range(l):
 		action = agent.act(state)
-		print(f"State: {state[:5]}")
 		next_state, profit, _, __ = step(state, action, t, window_size)
 		*_, long, short, t_taken, _, __ = next_state
 		# if action != 0:
