@@ -1,11 +1,11 @@
-import keras
-from keras.models import load_model
+import tensorflow as tf
+from tensorflow.python import keras
+from tensorflow.python.keras.models import load_model
 from agent.agent import Agent
 from functions import *
 import sys
 import os 
 import re 
-
 last_n = int(sys.argv[1])
 last_n = 1000 if last_n <= 0 else last_n
 data = getStockDataVec("^GSPC_2011")
@@ -14,16 +14,17 @@ window_size = 60
 def step(combined_state, action, t, window_size):
 	global data 
 
-	*_, long, short, t_taken_percentage, __, ___ = combined_state
+	*_,  portfolio = combined_state
+	hold, long, short, t_taken_percentage = portfolio
 	is_idle = True if long == 0 and short == 0 else False
 	t_taken = round(t_taken_percentage * window_size + t - window_size)
 	profit = 0 
 	double_buy = 0
 	wrong_sell = 0
-	next_portfolio = [long, short, t_taken_percentage - (1/window_size) if not is_idle else 0, 0, 0]
+	next_portfolio = [hold, long, short, t_taken_percentage - (1/window_size) if not is_idle else 0]
 	if action == 1 or action == 2:
 		if is_idle:
-			next_portfolio = [ 1 if action == 1 else 0, 1 if action == 2 else 0, (window_size-1)/window_size, 0, 0]
+			next_portfolio = [ 1 if action == 1 else 0, 1 if action == 2 else 0, (window_size-1)/window_size]
 		else:
 			double_buy = 1
 	elif action == 3: #sell 
@@ -31,7 +32,7 @@ def step(combined_state, action, t, window_size):
 			now = data["Close"][t] 
 			then = data["Close"][t_taken]
 			profit = (now - then) * (1 if long == 1 else -1)
-			next_portfolio = [0, 0, 0, 0, 0]
+			next_portfolio = [0, 0, 0, 0]
 		else:
 			wrong_sell = 1
 	next_state = getState(data, t+1, window_size, next_portfolio)		

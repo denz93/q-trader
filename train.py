@@ -27,7 +27,7 @@ data = getStockDataVec(stock_name)
 l = len(data) - 1
 batch_size = 32
 OPPORTUNITY_COST = 2.75/100
-DOUBLE_BET_PENALTY = np.log((data["Close"].max() - data["Close"].median()))
+DOUBLE_BET_PENALTY = 1
 WAIT_TOO_LONG_PENALTY = DOUBLE_BET_PENALTY
 
 print(f"Double bet penalty: {DOUBLE_BET_PENALTY}")
@@ -36,32 +36,35 @@ def step(combined_state, action, t):
 	global window_size
 	global l 
 
-	*state, long, short, t_taken_percentage, _, __ = combined_state
+	*state, position = combined_state
+	hold, long, short, t_taken_percentage = position
 	is_idle = True if long == 0 and short == 0 else False
 	t_taken = round(t_taken_percentage * window_size + t - window_size)
 	is_in_position_too_long = t_taken_percentage <= 0 
-	next_portfolio = [long, short, t_taken_percentage - (1/window_size) if not is_idle else 0, 0, 0]
+	next_portfolio = [hold, long, short, t_taken_percentage - (1/window_size) if not is_idle else 0]
 	reward = 0
 	info = {}
 
 	if action == 0: #hold
 		if is_idle:
 			reward = -OPPORTUNITY_COST
-			next_portfolio = [0, 0, 0, 0, 0]
+			next_portfolio = [1, 0, 0, 0]
 		elif is_in_position_too_long: #force sell
 			reward = -WAIT_TOO_LONG_PENALTY
-			next_portfolio = [0, 0, 0, 0, 0]
+			next_portfolio = [1, 0, 0, 0]
 		else:
-			gain = data["Close"][t] - data["Close"][t_taken]
+			now = data["Close"][t]
+			then = data["Close"][t_taken]
+			gain = (now - then) / then
 			gain = gain if long == 1 else -gain
 			ith_taken = t - t_taken + 1
-			reward = gain * (0.5 ** ith_taken)
-			info["profit"] = reward
+			reward = gain * (0.95 ** ith_taken)
+			info["profit"] = gain
 			info["start"] = t_taken 
 			info["end"] = t
 	elif action == 1 or action == 2: #long/short 
 		if is_idle:
-			next_portfolio = [1 if action == 1 else 0, 1 if action == 2 else 0, (window_size-1)/window_size, 0, 0]
+			next_portfolio = [0, 1 if action == 1 else 0, 1 if action == 2 else 0, (window_size-1)/window_size]
 		else:
 			reward = -DOUBLE_BET_PENALTY
 	else: #sell 
@@ -70,12 +73,13 @@ def step(combined_state, action, t):
 		else:
 			now = data["Close"][t] 
 			then = data["Close"][t_taken]
-			reward = (now - then) * (1 if long == 1 else -1)
-			next_portfolio = [0, 0, 0, 0, 0]
+			gain = (now - then) * (1 if long == 1 else -1)
+			reward = gain / then
+			next_portfolio = [1, 0, 0, 0]
 			info = {
 				"start": t_taken,
 				"end": t,
-				"profit": reward,
+				"profit": gain,
 			}
 
 	done = t == l - 1
@@ -93,7 +97,8 @@ for e in range(episode_count + 1):
 		action = agent.act(state)
 
 		next_state, reward, done, info = step(state, action, t)
-		*_, long, short, t_taken, _, __ = next_state
+		*_, portfolio= next_state
+		hold, long, short, t_taken = portfolio
 
 		if action == 0: 
 			logger.info(f"Hold at t{t}| {formatPrice(data['Close'][t])}")
@@ -110,7 +115,7 @@ for e in range(episode_count + 1):
 				logger.info(f"Profit: {formatPrice(info['profit'])} | Start: {info['start']} | End: {info['end']}")
 				total_profit += info["profit"]
 		logger.info(f"Reward: {reward}")
-		logger.info(f"Portfolio: {[long, short, t_taken]}")
+		logger.info(f"Portfolio: {[hold, long, short, t_taken]}")
 		agent.memory.append((state, action, reward, next_state, done))
 		state = next_state
 
