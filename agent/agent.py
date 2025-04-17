@@ -1,9 +1,8 @@
 import keras
 from keras.models import Sequential
 from keras.models import load_model
-from keras.layers import Dense
+from keras.layers import Dense, Dropout
 from keras.optimizers import Adam
-
 import numpy as np
 import random
 from collections import deque
@@ -21,24 +20,25 @@ class Agent:
 		self.epsilon = 1.0
 		self.epsilon_min = 0.01
 		self.epsilon_decay = 0.995
-
-		self.model = load_model("models/" + model_name) if is_eval else self._model()
+		self.model = load_model("models/" + model_name, custom_objects={'mse': keras.losses.MeanSquaredError()}) if is_eval else self._model()
 
 	def _model(self):
 		model = Sequential()
-		model.add(Dense(units=64, input_shape=(self.state_size+1, 5), activation="relu"))
-		model.add(Dense(units=32, activation="relu"))
-		model.add(Dense(units=8, activation="relu"))
+		model.add(Dense(units=128, input_shape=((self.state_size+1)*5,), activation="gelu"))
+		model.add(Dense(units=64, activation="gelu"))
+		model.add(Dense(units=32, activation="gelu"))
+		model.add(Dense(units=8, activation="gelu"))
 		model.add(Dense(self.action_size, activation="linear"))
-		model.compile(loss="mse", optimizer=Adam(learning_rate=0.001))
-
+		model.compile(loss="mse", optimizer=Adam(learning_rate=0.002))
+		model.summary()
 		return model
 
 	def act(self, state):
 		if not self.is_eval and np.random.rand() <= self.epsilon:
 			return random.randrange(self.action_size)
 
-		options = self.model.predict(np.array([state]))
+		options = self.model.predict(np.array([state]), verbose=0)
+		print(options)
 		return np.argmax(options[0])
 
 	def expReplay(self, batch_size):
@@ -50,11 +50,15 @@ class Agent:
 		for state, action, reward, next_state, done in mini_batch:
 			target = reward
 			if not done:
-				target = reward + self.gamma * np.amax(self.model.predict(np.array([next_state]))[0])
+				target = reward + self.gamma * np.amax(self.model.predict(np.array([next_state]), verbose=0)[0])
 
-			target_f = self.model.predict(np.array([state]))
+			target_f = self.model.predict(np.array([state]), verbose=0)
+			#print(target_f)
+			#print(f"action: {action}")
+			#exit()
 			target_f[0][action] = target
-			self.model.fit(np.array([state]), target_f, epochs=1, verbose=0)
+			history = self.model.fit(np.array([state]), target_f, epochs=1, verbose=0)
+			return history.history["loss"][0]
 
 		if self.epsilon > self.epsilon_min:
 			self.epsilon *= self.epsilon_decay 

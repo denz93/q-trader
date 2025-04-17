@@ -39,5 +39,5 @@ def getState(data, t, n, portfolio=[0, 0, 0, 0, 0]):
 	
 	t_cache = t + n - 1
 	block = data_cache[t_cache - (n-1): t_cache + 1]
-	
-	return np.concatenate([block, [portfolio]])
+	final_state = np.concatenate([block, [portfolio]], axis=None)
+	return final_state
