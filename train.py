@@ -6,7 +6,7 @@ import psutil
 import os
 from logging.handlers import RotatingFileHandler
 import numpy as np
-
+import time
 
 # Set up logger with RotatingFileHandler
 logger = logging.getLogger(__name__)
@@ -89,6 +89,8 @@ def step(combined_state, action, t):
 	return (getState(data, t + 1, window_size, next_portfolio), reward, done, info)
 
 for e in range(episode_count + 1):
+	# Start the timer
+	start_time = time.time()
 	logger.info("Episode " + str(e) + "/" + str(episode_count))
 	state = getState(data, 0, window_size)
 
@@ -130,5 +132,12 @@ for e in range(episode_count + 1):
 			loss_list.append(loss)
 	logger.info(f"Loss: {loss_list[len(loss_list) - 5:]}")
 
+
+	# End the timer
+	end_time = time.time()
+
+	# Calculate elapsed time
+	elapsed_time = end_time - start_time
+	logger.info(f"Episode execution time: {elapsed_time:.4f} seconds")
 	if e % save_step == 0 and e > 0:
 		agent.model.save(f"models/model_ep{e}.keras")
