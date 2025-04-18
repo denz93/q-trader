@@ -128,7 +128,7 @@ for e in range(episode_count + 1):
 		if len(agent.memory) > batch_size:
 			loss = agent.expReplay(batch_size)
 			loss_list.append(loss)
-	logger.info(f"Loss: {loss[len(loss_list) - 5:]}")
+	logger.info(f"Loss: {loss_list[len(loss_list) - 5:]}")
 
 	if e % save_step == 0 and e > 0:
 		agent.model.save(f"models/model_ep{e}.keras")
