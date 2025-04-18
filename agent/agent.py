@@ -12,7 +12,7 @@ class Agent:
 	def __init__(self, state_size, is_eval=False, model_name=""):
 		self.state_size = state_size # normalized previous days
 		self.action_size = 4 # hold, long, short, sell
-		self.memory = deque(maxlen=1000)
+		self.memory = deque(maxlen=25000)
 		self.inventory = []
 		self.model_name = model_name
 		self.is_eval = is_eval
@@ -41,7 +41,6 @@ class Agent:
 	def act(self, state):
 		if not self.is_eval and np.random.rand() <= self.epsilon:
 			return random.randrange(self.action_size)
-
 		options = self.model.predict(self.to_model_input(state), verbose=0)
 		return np.argmax(options[0])
 	def to_model_input(self, state):
@@ -53,8 +52,7 @@ class Agent:
 	def expReplay(self, batch_size):
 		mini_batch = []
 		l = len(self.memory)
-		for i in range(l - batch_size + 1, l):
-			mini_batch.append(self.memory[i])
+		mini_batch = random.sample(self.memory, batch_size)
 
 		for state, action, reward, next_state, done in mini_batch:
 			target = reward

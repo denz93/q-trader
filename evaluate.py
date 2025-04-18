@@ -50,7 +50,8 @@ def evaluate(model_name):
 	for t in range(l):
 		action = agent.act(state)
 		next_state, profit, _, __ = step(state, action, t, window_size)
-		*_, long, short, t_taken, _, __ = next_state
+		*_, portfolio = next_state
+		hold, long, short, t_taken = portfolio
 		# if action != 0:
 		# 	print(f"\n{action_map[action]} at t{t}")
 		# 	print(f"Next portfolio: {[long, short, t_taken]}")

@@ -16,12 +16,12 @@ formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
-if len(sys.argv) != 4:
-	logger.info("Usage: python train.py [stock] [window] [episodes]")
+if len(sys.argv) < 4:
+	logger.info("Usage: python train.py [stock] [window] [episodes] [save_step] - default 100")
 	exit()
 
 stock_name, window_size, episode_count = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
-
+save_step = int(sys.argv[4]) if len(sys.argv) > 4 else 100
 agent = Agent(window_size)
 data = getStockDataVec(stock_name)
 l = len(data) - 1
@@ -55,10 +55,10 @@ def step(combined_state, action, t):
 		else:
 			now = data["Close"][t]
 			then = data["Close"][t_taken]
-			gain = (now - then) / then
+			gain = now - then
 			gain = gain if long == 1 else -gain
 			ith_taken = t - t_taken + 1
-			reward = gain * (0.95 ** ith_taken)
+			reward = (gain / then) * (0.95 ** ith_taken)
 			info["profit"] = gain
 			info["start"] = t_taken 
 			info["end"] = t
@@ -91,8 +91,7 @@ for e in range(episode_count + 1):
 	state = getState(data, 0, window_size)
 
 	total_profit = 0
-	agent.inventory = []
-
+	loss_list = []	
 	for t in range(l):
 		action = agent.act(state)
 
@@ -101,21 +100,21 @@ for e in range(episode_count + 1):
 		hold, long, short, t_taken = portfolio
 
 		if action == 0: 
-			logger.info(f"Hold at t{t}| {formatPrice(data['Close'][t])}")
+			logger.debug(f"Hold at t{t}| {formatPrice(data['Close'][t])}")
 			if "profit" in info:
-				logger.info(f"Profit: {formatPrice(info['profit'])} | Start: {info['start']} | End: {info['end']}")
+				logger.debug(f"Profit: {formatPrice(info['profit'])} | Start: {info['start']} | End: {info['end']}")
 				total_profit += info["profit"]
 		elif action == 1:
-			logger.info(f"Long at t{t} | {formatPrice(data['Close'][t])}")
+			logger.debug(f"Long at t{t} | {formatPrice(data['Close'][t])}")
 		elif action == 2:
-			logger.info(f"Short at t{t} | {formatPrice(data['Close'][t])}")
+			logger.debug(f"Short at t{t} | {formatPrice(data['Close'][t])}")
 		elif action == 3:
-			logger.info(f"Sell at t{t} | {formatPrice(data['Close'][t])}")
+			logger.debug(f"Sell at t{t} | {formatPrice(data['Close'][t])}")
 			if "profit" in info:
-				logger.info(f"Profit: {formatPrice(info['profit'])} | Start: {info['start']} | End: {info['end']}")
+				logger.debug(f"Profit: {formatPrice(info['profit'])} | Start: {info['start']} | End: {info['end']}")
 				total_profit += info["profit"]
-		logger.info(f"Reward: {reward}")
-		logger.info(f"Portfolio: {[hold, long, short, t_taken]}")
+		logger.debug(f"Reward: {reward}")
+		logger.debug(f"Portfolio: {[hold, long, short, t_taken]}")
 		agent.memory.append((state, action, reward, next_state, done))
 		state = next_state
 
@@ -126,7 +125,8 @@ for e in range(episode_count + 1):
 
 		if len(agent.memory) > batch_size:
 			loss = agent.expReplay(batch_size)
-			logger.info(f"Loss: {loss}")
+			loss_list.append(loss)
+	logger.info(f"Loss: {loss[len[loss_list] - 5:]}")
 
-	if e % 5 == 0:
+	if e % save_step == 0 and e > 0:
 		agent.model.save(f"models/model_ep{e}.keras")
