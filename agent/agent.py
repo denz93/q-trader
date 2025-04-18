@@ -26,10 +26,14 @@ class Agent:
 	def _model(self):
 		ohlcv_input = Input(shape=(self.state_size, 5), name="ohlcv")
 		lstm_out = LSTM(64)(ohlcv_input)
-		
+		lstm_out = Dropout(0.2)(lstm_out)
+
 		position_input = Input(shape=(4,), name="position")
 		combined = Concatenate()([lstm_out, position_input])
+		
 		dense = Dense(units=32, activation="relu")(combined)
+		dense = Dropout(0.2)(dense)
+		dense = Dense(units=8, activation="relu")(dense)
 		output = Dense(units=self.action_size, activation="linear")(dense)
 
 		model = keras.Model(inputs=[ohlcv_input, position_input], outputs=output)
