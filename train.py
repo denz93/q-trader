@@ -2,7 +2,6 @@ from agent.agent import Agent
 from functions import *
 import sys
 import logging
-import psutil
 import os
 from logging.handlers import RotatingFileHandler
 import numpy as np
@@ -28,7 +27,7 @@ agent = Agent(state_size=window_size, is_eval=False, model_name="", memory_size=
 data = getStockDataVec(stock_name)
 l = len(data) - 1
 batch_size = 32
-OPPORTUNITY_COST = 2.75/100
+OPPORTUNITY_COST = 0.1
 DOUBLE_BET_PENALTY = 1
 WAIT_TOO_LONG_PENALTY = DOUBLE_BET_PENALTY
 
