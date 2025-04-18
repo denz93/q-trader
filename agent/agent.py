@@ -9,10 +9,10 @@ import random
 from collections import deque
 
 class Agent:
-	def __init__(self, state_size, is_eval=False, model_name=""):
+	def __init__(self, state_size, is_eval=False, model_name="", memory_size=25000):
 		self.state_size = state_size # normalized previous days
 		self.action_size = 4 # hold, long, short, sell
-		self.memory = deque(maxlen=25000)
+		self.memory = deque(maxlen=memory_size)
 		self.inventory = []
 		self.model_name = model_name
 		self.is_eval = is_eval
