@@ -17,12 +17,14 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 if len(sys.argv) < 4:
-	logger.info("Usage: python train.py [stock] [window] [episodes] [save_step] - default 100")
+	logger.info("Usage: python train.py [stock] [window] [episodes] [save_step] - default 100 [memory_size] default 25000")
 	exit()
 
 stock_name, window_size, episode_count = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
 save_step = int(sys.argv[4]) if len(sys.argv) > 4 else 100
-agent = Agent(window_size)
+memory_size = int(sys.argv[5]) if len(sys.argv) > 5 else 25000
+agent = Agent(state_size=window_size, is_eval=False, model_name="", memory_size=memory_size)
+
 data = getStockDataVec(stock_name)
 l = len(data) - 1
 batch_size = 32
@@ -126,7 +128,7 @@ for e in range(episode_count + 1):
 		if len(agent.memory) > batch_size:
 			loss = agent.expReplay(batch_size)
 			loss_list.append(loss)
-	logger.info(f"Loss: {loss[len[loss_list] - 5:]}")
+	logger.info(f"Loss: {loss[len(loss_list) - 5:]}")
 
 	if e % save_step == 0 and e > 0:
 		agent.model.save(f"models/model_ep{e}.keras")
