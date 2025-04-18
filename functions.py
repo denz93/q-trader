@@ -34,7 +34,6 @@ def getState(data, t, n, portfolio=[0, 0, 0, 0]):
 		_[ohlc] = (_[ohlc] - shifted) / shifted
 		_["Volume"] = _["Volume"].apply(lambda x: np.log(x + 1e-6))
 		_["Volume"] = (_["Volume"] - _["Volume"].mean()) / _["Volume"].std()
-		print(_.head())
 		data_cache = _.to_numpy().tolist()
 		padding = np.array([ data_cache[0] for i in range(n - 1)])
 		data_cache = [*padding, *data_cache]

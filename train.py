@@ -17,7 +17,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 if len(sys.argv) < 4:
-	logger.info("Usage: python train.py [stock] [window] [episodes] [save_step] - default 100 [memory_size] default 25000")
+	print("Usage: python train.py [stock] [window] [episodes] [save_step] - default 100 [memory_size] default 25000")
 	exit()
 
 stock_name, window_size, episode_count = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
@@ -32,7 +32,13 @@ OPPORTUNITY_COST = 2.75/100
 DOUBLE_BET_PENALTY = 1
 WAIT_TOO_LONG_PENALTY = DOUBLE_BET_PENALTY
 
-print(f"Double bet penalty: {DOUBLE_BET_PENALTY}")
+logger.info("--------------------------------")
+logger.info(f"REPLAY_BUFFER_SIZE: {memory_size}")
+logger.info(f"OPPORTUNITY_COST: {DOUBLE_BET_PENALTY}")
+logger.info(f"DOUBLE_BET_PENALTY: {DOUBLE_BET_PENALTY}")
+logger.info(f"SAVE MODEL EACH: {save_step} steps")
+logger.info("--------------------------------")
+
 
 def step(combined_state, action, t):
 	global window_size
