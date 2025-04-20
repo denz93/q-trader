@@ -75,6 +75,9 @@ def step(combined_state, action, t):
 			next_portfolio = [0, 1 if action == 1 else 0, 1 if action == 2 else 0, (window_size-1)/window_size]
 		else:
 			reward = -DOUBLE_BET_PENALTY
+			if is_in_position_too_long: #force sell
+				reward += -WAIT_TOO_LONG_PENALTY
+				next_portfolio = [1, 0, 0, 0]
 	else: #sell 
 		if is_idle:
 			reward = -DOUBLE_BET_PENALTY
