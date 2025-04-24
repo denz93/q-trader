@@ -2,3 +2,5 @@
 *.log
 **/__pycache__/*
 models
+.venv
+__pycache__
