@@ -1,0 +1,18 @@
+agent:
+  memory_size: 25000
+  epsilon: 1.0
+  epsilon_min: 0.05 # 5% chance to explore
+  epsilon_decay: 0.9994 # ~5000 steps to reach epsilon_min
+
+env:
+  opportunity_cost: 0.0275 # 2.75% opportunity cost
+  double_bet_penalty: 1 # 100% penalty for double betting
+  wait_too_long_penalty: 0.275 # 27.5% penalty for waiting too long
+  sell_bonus: 0.001 # 0.1% bonus for selling
+
+train:
+  stock_name: "^GSPC"
+  window_size: 60 # how far to look back
+  episode_count: 100 # number of episodes to train
+  save_step: 10 # how often to save the model
+  batch_size: 32 # batch size for experience replay

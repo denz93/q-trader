@@ -4,3 +4,5 @@
 models
 .venv
 __pycache__
+evaluation-output.yml
+.vscode
