@@ -34,17 +34,20 @@ class TestHoldAction(unittest.TestCase):
     def test_at_long(self):
         combined_state = (whatever, [0, 1, 0, 2/window_size])
         t = 3
-        next_state, reward, _, __ = env.step(combined_state, self.action, t)
+        next_state, reward, _, info = env.step(combined_state, self.action, t)
         next_portfolio = next_state[1]
         self.assertEqual(next_portfolio, [0, 1, 0, 1/window_size])
         self.assertEqual(reward, 1/3.5)
+        self.assertEqual(info["profit"], 0)
+
     def test_at_short(self):
         combined_state = (whatever, [0, 0, 1, 2/window_size])
         t = 3
-        next_state, reward, _, __ = env.step(combined_state, self.action, t)
+        next_state, reward, _, info = env.step(combined_state, self.action, t)
         next_portfolio = next_state[1]
         self.assertEqual(next_portfolio, [0, 0, 1, 1/window_size])
         self.assertEqual(reward, -1/3.5)
+        self.assertEqual(info["profit"], 0)
     
     def test_at_hold_too_long(self):
         combined_state = (whatever, [1, 0, 0, 1/window_size])
@@ -61,6 +64,7 @@ class TestHoldAction(unittest.TestCase):
         next_portfolio = next_state[1]
         npt.assert_almost_equal(next_portfolio, [1, 0, 0, (window_size-1)/window_size])
         self.assertLess(reward, 0)
+
     def test_at_short_too_long(self):
         combined_state = (whatever, [0, 0, 1, 1/window_size])
         t = 4
@@ -73,6 +77,7 @@ class TestLongAction(unittest.TestCase):
     def setUp(self) -> None:
         self.action = 1 #long
         return super().setUp()
+    
     def test_at_hold(self):
         combined_state = (whatever, [1, 0, 0, (window_size-1)/window_size])
         t = 4
@@ -80,6 +85,7 @@ class TestLongAction(unittest.TestCase):
         next_portfolio = next_state[1]
         npt.assert_almost_equal(next_portfolio, [0, 1, 0, (window_size-1)/window_size])
         self.assertEqual(reward, 0)
+
     def test_at_long(self):
         combined_state = (whatever, [0, 1, 0, (window_size-1)/window_size])
         t = 3
@@ -87,6 +93,7 @@ class TestLongAction(unittest.TestCase):
         next_portfolio = next_state[1]
         self.assertEqual(next_portfolio, [0, 1, 0, (window_size-2)/window_size])
         self.assertEqual(reward, -env.double_bet_penalty)
+        
     def test_at_short(self):
         combined_state = (whatever, [0, 0, 1, (window_size-1)/window_size])
         t = 3

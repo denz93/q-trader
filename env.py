@@ -19,6 +19,10 @@ class TradingEnv:
     def step(self, combined_state, action, t):
         *state, position = combined_state
         hold, long, short, t_taken_percentage = position
+        hold = int(hold)
+        long = int(long)
+        short = int(short)
+        
         is_idle = True if long == 0 and short == 0 else False
         t_taken = round(t_taken_percentage * self.window_size + t - self.window_size)
         is_in_position_too_long = t_taken_percentage <= 1 / self.window_size
@@ -49,10 +53,6 @@ class TradingEnv:
                     gain = now - then
                     gain = gain if long == 1 else -gain
                     reward = (gain / then)
-
-                    info["profit"] = gain
-                    info["start"] = t_taken
-                    info["end"] = t
         elif action == 1 or action == 2:  # long/short
             if is_idle:  # valid bet
                 next_portfolio = [0, 1 if action == 1 else 0, 1 if action == 2 else 0, (self.window_size - 1) / self.window_size]
