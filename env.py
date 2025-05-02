@@ -31,7 +31,9 @@ class TradingEnv:
         info = {
             "bet_violation": 0,
             "hold_violation": 0,
-            "profit": 0
+            "profit": 0,
+            "start": 0,
+            "end": 0
         }
 
         if action == 0:  # hold
