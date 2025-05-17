@@ -10,7 +10,12 @@ from collections import deque
 import time 
 
 class Agent:
-	def __init__(self, state_size: int, is_eval=False, model_name="", memory_size=25000, metadata={}):
+	def __init__(self, 
+			  state_size: int, 
+			  is_eval=False, 
+			  model_name="", 
+			  memory_size=25000, 
+			  epsilon=1.0, epsilon_min=0.05, epsilon_decay=0.9997, metadata={}):
 		self.state_size = state_size # normalized previous days
 		self.action_size = 4 # hold, long, short, sell
 		self.memory = deque(maxlen=memory_size)
@@ -22,9 +27,9 @@ class Agent:
 		self.metadata = metadata
 
 		self.gamma = 0.95
-		self.epsilon = 1.0
-		self.epsilon_min = 0.01
-		self.epsilon_decay = 0.965 # ~130 episodes to epsilon_min
+		self.epsilon = epsilon
+		self.epsilon_min = epsilon_min
+		self.epsilon_decay = epsilon_decay # ~130 episodes to epsilon_min
 		self.model = self._load_or_create_model()
 		self.checkpoint_callback = self._create_checkpoint_cb()
 
@@ -98,10 +103,10 @@ class Agent:
 		self.train_times = []
 
 	def get_avg_predict_time(self):
-		return np.average(self.predict_times)
+		return float(np.average(self.predict_times)) if len(self.predict_times) > 0 else 0
 	
 	def get_avg_train_time(self):
-		return np.average(self.train_times)
+		return float(np.average(self.train_times)) if len(self.train_times) > 0 else 0
 	
 	def decay_epsilon(self):
 		self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
